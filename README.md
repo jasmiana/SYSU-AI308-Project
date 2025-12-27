@@ -10,6 +10,11 @@ BSARec (Beyond Self-Attention Recommendation) 是一种序列推荐模型，通�
 - **动态混合**：使用可学习的权重 `alpha` 平衡两个分支的贡献
 - **频域处理**：通过傅里叶变换分离高频（短期兴趣）和低频（长期兴趣）信号
 
+作为优化，本项目还实现了 BSARec 的两个变体模型：
+
+- **LaplaceRec**: 使用离散余弦变换（DCT）的变体，对应序列图拉普拉斯算子的谱基，适合处理序列数据的平滑性特征
+- **ZRec**: 使用 Z-变换（广义 DFT）的变体，引入半径参数 `gamma` 来评估单位圆外的频谱，提供更灵活的频域分析能力
+
 ## 项目结构
 
 ```markdown
@@ -18,7 +23,9 @@ ReChorus/                    # ReChorus 框架核心代码
 ├── src/
 │   ├── main.py              # 主入口文件
 │   ├── models/
-│   │   └── BSARec.py        # BSARec 模型实现（核心代码）
+│   │   ├── BSARec.py        # BSARec 模型实现
+│   │   ├── ZRec.py          # ZRec 模型实现
+│   │   └── LaplaceRec.py    # LaplaceRec 模型实现
 │   ├── helpers/             # Reader 和 Runner 模块
 │   └── utils/               # 工具函数
 ├── data/                    # 数据集目录
@@ -82,14 +89,24 @@ python process_split_ml1m.py
 
 ```bash
 cd ReChorus
-python src/main.py --model_name BSARec --dataset ML-1M [其他参数]
+python src/main.py --model_name [模型名称] --dataset [数据集名称] [其他参数]
 ```
 
-
-**参考示例**
+**BSARec 示例**
 ```bash
-python src/main.py --model_name BSARec --dataset ML-1M --emb_size 64 --lr 5e-4 --epoch 50 --num_workers 0 --alpha 0.3 --c 9 --history_len 50 --num_heads 4 --gamma_init 1
+python src/main.py --model_name BSARec --dataset ML-1M --emb_size 64 --lr 5e-4 --epoch 50 --num_workers 0 --alpha 0.3 --c 9 --history_len 50 --num_heads 4
 ```
+
+**LaplaceRec 示例**
+```bash
+python src/main.py --model_name LaplaceRec --dataset ML-1M --emb_size 64 --lr 5e-4 --epoch 50 --num_workers 0 --alpha 0.3 --c 9 --history_len 50 --num_heads 4
+```
+
+**ZRec 示例**
+```bash
+python src/main.py --model_name ZRec --dataset ML-1M --emb_size 64 --lr 5e-4 --epoch 50 --num_workers 0 --alpha 0.3 --c 9 --history_len 50 --num_heads 4 --gamma_init 1.02 --fix_gamma 1
+```
+
 
 
 **完整示例（Windows 环境）**
@@ -117,29 +134,40 @@ python src/main.py \
 
 **关键参数说明**
 
-| 参数 | 说明 | 推荐值 |
-|------|------|--------|
-| `--alpha` | 归纳偏置权重（0-1），越大越依赖频域滤波 | 0.3-0.9 |
-| `--c` | 低频截止点，控制频域分离的阈值 | 1-9 |
-| `--beta_init` | 高频缩放因子的初始值 | 0.0 |
-| `--num_heads` | 自注意力头数 | 2-4 |
-| `--num_layers` | 编码器层数 | 2 |
-| `--emb_size` | 嵌入维度 | 64 |
-| `--history_len` | 序列最大长度 | 20-50 |
-| `--num_workers` | 数据加载进程数（Windows 建议设为 0） | 0 |
+| 参数 | 说明 | 推荐值 | 适用模型 |
+|------|------|--------|----------|
+| `--alpha` | 归纳偏置权重（0-1），越大越依赖频域滤波 | 0.3-0.9 | 所有模型 |
+| `--c` | 低频截止点，控制频域分离的阈值 | 1-9 | 所有模型 |
+| `--beta_init` | 高频缩放因子的初始值 | 0.0 | 所有模型 |
+| `--gamma_init` | Z-变换半径的初始值（仅 ZRec） | 1.0 | ZRec |
+| `--fix_gamma` | 是否固定 gamma（1=固定，0=可学习，仅 ZRec） | 0 | ZRec |
+| `--num_heads` | 自注意力头数 | 2-4 | 所有模型 |
+| `--num_layers` | 编码器层数 | 2 | 所有模型 |
+| `--emb_size` | 嵌入维度 | 64 | 所有模型 |
+| `--history_len` | 序列最大长度 | 20-50 | 所有模型 |
+| `--num_workers` | 数据加载进程数（Windows 建议设为 0） | 0 | 所有模型 |
 
 
 
 ### 运行基线模型对比
 
-为了验证 BSARec 的效果，可以运行以下基线模型：
+为了验证 BSARec 及其变体的效果，可以运行以下模型：
 
 ```bash
+# BSARec（原始 FFT 版本）
+python src/main.py --model_name BSARec --dataset ML-1M --emb_size 64 --lr 5e-4 --epoch 50 --num_workers 0 --alpha 0.7 --c 5 --history_len 50 --num_heads 4
+
+# ZRec（Z-变换变体）
+python src/main.py --model_name ZRec --dataset ML-1M --emb_size 64 --lr 5e-4 --epoch 50 --num_workers 0 --alpha 0.7 --c 5 --gamma_init 1.0 --fix_gamma 0 --history_len 50 --num_heads 4
+
+# LaplaceRec（DCT 变体）
+python src/main.py --model_name LaplaceRec --dataset ML-1M --emb_size 64 --lr 5e-4 --epoch 50 --num_workers 0 --alpha 0.7 --c 5 --history_len 50 --num_heads 4
+
 # SASRec（Transformer 基线）
-python src/main.py --model_name SASRec --dataset ML-1M --emb_size 64 --lr 5e-4 --epoch 50 --num_workers 0 --alpha 0.3 --c 9 --history_len 50 --num_heads 4
+python src/main.py --model_name SASRec --dataset ML-1M --emb_size 64 --lr 5e-4 --epoch 50 --num_workers 0 --history_len 50 --num_heads 4
 
 # GRU4Rec（RNN 基线）
-python src/main.py --model_name GRU4Rec --dataset ML-1M --emb_size 64 --lr 5e-4 --epoch 50 --num_workers 0 --alpha 0.3 --c 9 --history_len 50 --num_heads 4
+python src/main.py --model_name GRU4Rec --dataset ML-1M --emb_size 64 --lr 5e-4 --epoch 50 --num_workers 0 --history_len 50 --num_heads 4
 ```
 
 ## 实验结果
@@ -174,6 +202,36 @@ python src/main.py --model_name GRU4Rec --dataset ML-1M --emb_size 64 --lr 5e-4 
    - 分离低频（`c` 以下）和高频（`c` 以上）分量
    - 对高频分量应用可学习的缩放因子 `beta`
    - 通过 IFFT 转换回时域
+
+### ZRec 模型架构 (`ZRec.py`)
+
+1. **ZRec**: 主模型类，继承自 `SequentialModel`
+   - 架构与 BSARec 类似，使用 ZLayer 替代 BSALayer
+
+2. **ZLayer**: 编码器层
+   - 结构与 BSALayer 相同，使用 ZRescaler 替代 FrequencyRescaler
+
+3. **ZRescaler**: Z-变换重缩放模块
+   - 引入半径参数 `gamma`，支持评估单位圆外的频谱
+   - 对输入序列应用权重 `gamma^(-n)` 进行预处理
+   - 使用 FFT 进行频域变换
+   - 分离并缩放高频分量后，通过 IFFT 转换回时域
+   - 应用逆权重 `gamma^n` 进行后处理
+   - `gamma` 可以是固定值（`fix_gamma=1`）或可学习参数（`fix_gamma=0`）
+
+### LaplaceRec 模型架构 (`LaplaceRec.py`)
+
+1. **LaplaceRec**: 主模型类，继承自 `SequentialModel`
+   - 架构与 BSARec 类似，使用 LaplaceLayer 替代 BSALayer
+
+2. **LaplaceLayer**: 编码器层
+   - 结构与 BSALayer 相同，使用 LaplaceRescaler 替代 FrequencyRescaler
+
+3. **LaplaceRescaler**: 拉普拉斯重缩放模块
+   - 使用离散余弦变换（DCT）替代 FFT
+   - DCT 对应序列图拉普拉斯算子的谱基，更适合处理序列的平滑性
+   - 预计算 DCT 和 IDCT 矩阵（支持动态序列长度）
+   - 分离并缩放高频分量后，通过 IDCT 转换回时域
 
 ### 关键修复
 
