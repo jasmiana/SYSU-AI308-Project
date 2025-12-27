@@ -1,6 +1,3 @@
-# -*- coding: UTF-8 -*-
-# @Author  : ReChorus User (Z-Transform Variant)
-
 import torch
 import torch.nn as nn
 import numpy as np
@@ -14,7 +11,6 @@ class ZRec(SequentialModel):
     """
     reader = 'SeqReader'
     runner = 'BaseRunner'
-    # 增加 gamma 和 fix_gamma 到日志参数中
     extra_log_args = ['alpha', 'c', 'beta_init', 'gamma_init', 'fix_gamma', 'num_heads']
 
     @staticmethod
@@ -26,7 +22,6 @@ class ZRec(SequentialModel):
         parser.add_argument('--c', type=int, default=5, help='Low-frequency cutoff.')
         parser.add_argument('--beta_init', type=float, default=0.0, help='Init value for beta.')
         
-        # [Update] Gamma 参数配置
         parser.add_argument('--gamma_init', type=float, default=1.0, help='Init value for gamma (Z-plane radius).')
         parser.add_argument('--fix_gamma', type=int, default=0, help='Whether to fix gamma (1) or make it learnable (0).')
         
@@ -46,22 +41,22 @@ class ZRec(SequentialModel):
         self.alpha = args.alpha
         self.c = args.c
         
-        # 1. Embeddings
+        # Embeddings
         self.item_embeddings = nn.Embedding(self.item_num, self.emb_size, padding_idx=0)
         self.position_embeddings = nn.Embedding(self.max_len, self.emb_size)
         
-        # 2. Norm & Dropout
+        # Norm & Dropout
         self.emb_layer_norm = nn.LayerNorm(self.emb_size, eps=1e-12)
         self.dropout = nn.Dropout(args.dropout)
 
-        # 3. Encoder Layers
+        # Encoder Layers
         self.layers = nn.ModuleList([
             ZLayer(self.emb_size, args.num_heads, self.emb_size * 4, args.dropout, 
                    self.alpha, self.c, args.beta_init, args.gamma_init, args.fix_gamma, self.max_len)
             for _ in range(args.num_layers)
         ])
         
-        # 4. Final Norm
+        # Final Norm
         self.final_layer_norm = nn.LayerNorm(self.emb_size, eps=1e-12)
 
         self.apply(self.init_weights)
@@ -149,37 +144,33 @@ class ZRescaler(nn.Module):
         self.c = c
         self.beta = nn.Parameter(torch.tensor(beta_init))
         
-        # [Robustness Update] 显式指定 dtype 为 float32，防止双精度问题
         gamma_tensor = torch.tensor(gamma_init, dtype=torch.float32)
         
         if fix_gamma == 1:
-            # 注册为 buffer：不计算梯度，不参与优化，但会随模型 state_dict 保存
+            # buffer
             self.register_buffer('gamma', gamma_tensor)
         else:
-            # 注册为 Parameter：参与优化
+            # Parameter (into optimization)
             self.gamma = nn.Parameter(gamma_tensor)
         
     def forward(self, x):
         seq_len = x.shape[1]
         device = x.device
 
-        # 使用 x.dtype 确保数据类型一致 (如 float16/float32)
         n = torch.arange(seq_len, device=device, dtype=x.dtype)
         
-        # 简单的数值保护，防止 gamma <= 0 导致计算错误
-        # 仅在非固定模式下（训练时）可能需要，但加上无妨
+        
         gamma_val = self.gamma
         if gamma_val <= 1e-6:
              gamma_val = gamma_val + 1e-6
 
-        # weights = gamma^(-n)
-        # 广播机制: gamma_val (Scalar) -> pow -> weights (1, L, 1)
+        # weights = gamma^(-n), gamma_val (Scalar) -> pow -> weights (1, L, 1)
         weights = torch.pow(gamma_val, -n).view(1, -1, 1)
         inverse_weights = torch.pow(gamma_val, n).view(1, -1, 1)
 
         x_weighted = x * weights
 
-        # FFT 变换
+
         fft_x = torch.fft.rfft(x_weighted, dim=1, norm='ortho') 
         
         cutoff = min(self.c, fft_x.size(1))
@@ -188,9 +179,10 @@ class ZRescaler(nn.Module):
         hfc_scaled = hfc * self.beta
         fft_combined = torch.cat([lfc, hfc_scaled], dim=1)
         
-        # IFFT 还原
-        output_weighted = torch.fft.irfft(fft_combined, n=seq_len, dim=1, norm='ortho')
         
+        output_weighted = torch.fft.irfft(fft_combined, n=seq_len, dim=1, norm='ortho')
         output = output_weighted * inverse_weights
         
         return output
+    
+    
