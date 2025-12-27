@@ -74,18 +74,25 @@ python process_split_ml1m.py
 - `dev.csv`: 验证集
 - `test.csv`: 测试集
 
-**注意**：原始数据文件 `ratings.dat` 需要放在 `data/ML-1M/raw/ml-1m/` 目录下。可以从 [MovieLens 官网](https://grouplens.org/datasets/movielens/1m/) 下载。
+原始数据文件 `ratings.dat` 需要放在 `data/ML-1M/raw/ml-1m/` 目录下。可以从 [MovieLens 官网](https://grouplens.org/datasets/movielens/1m/) 下载。
 
 ### 运行训练
 
-**基本命令格式：**
+**基本命令格式**
 
 ```bash
 cd ReChorus
 python src/main.py --model_name BSARec --dataset ML-1M [其他参数]
 ```
 
-**完整示例（Windows 环境）：**
+
+**参考示例**
+```bash
+python src/main.py --model_name BSARec --dataset ML-1M --emb_size 64 --lr 5e-4 --epoch 50 --num_workers 0 --alpha 0.3 --c 9 --history_len 50 --num_heads 4 --gamma_init 1
+```
+
+
+**完整示例（Windows 环境）**
 
 ```bash
 python src/main.py \
@@ -106,7 +113,9 @@ python src/main.py \
     --gpu 0
 ```
 
-**关键参数说明：**
+
+
+**关键参数说明**
 
 | 参数 | 说明 | 推荐值 |
 |------|------|--------|
@@ -119,7 +128,7 @@ python src/main.py \
 | `--history_len` | 序列最大长度 | 20-50 |
 | `--num_workers` | 数据加载进程数（Windows 建议设为 0） | 0 |
 
-**不同数据集的推荐参数：**
+**不同数据集的推荐参数**
 
 - **ML-1M（稠密/长序列）**：`--alpha 0.7 --c 5`
 - **稀疏数据集**：`--alpha 0.3 --c 5`
@@ -171,27 +180,18 @@ python src/main.py --model_name GRU4Rec --dataset ML-1M --emb_size 64 --lr 5e-4 
 
 ### 关键修复
 
-代码中包含了重要的 bug 修复：
-- **动态序列提取**：使用 `gather` 操作正确提取每个用户最后一个有效 item 的表示，而不是简单地取序列末尾（可能包含 padding）
+- 使用 `gather` 操作正确提取每个用户最后一个有效 item 的表示，而不是简单地取序列末尾（可能包含 padding）
 
 ## 常见问题
 
 ### Windows 环境问题
 
-1. **多进程错误**：将 `--num_workers` 设为 `0`
-2. **路径问题**：确保使用正确的路径分隔符（代码已处理）
-3. **DLL 冲突**：如遇到 CUDA DLL 问题，检查 PyTorch 和 CUDA 版本兼容性
+**多进程错误**：将 `--num_workers` 设为 `0`
 
 ### 数据问题
 
-1. **找不到数据文件**：确保 `ratings.dat` 在 `data/ML-1M/raw/ml-1m/` 目录下
-2. **数据格式错误**：检查 CSV 文件是否为 tab 分隔（`\t`）
+**找不到数据文件**：确保 `ratings.dat` 在 `data/ML-1M/raw/ml-1m/` 目录下
 
-### 训练问题
-
-1. **内存不足**：减小 `--batch_size` 或 `--history_len`
-2. **收敛慢**：调整学习率 `--lr` 或增加训练轮数 `--epoch`
-3. **结果异常**：检查超参数设置，特别是 `--alpha` 和 `--c`
 
 ## 参考文献
 
