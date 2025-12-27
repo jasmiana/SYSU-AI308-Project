@@ -54,9 +54,5 @@ env/
 help/
 BSARec1.py
 BSARec2.py
-LaplaceRec.py
-ZRec.py
-log/LaplaceRec
-log/ZRec
 interaction_5core.csv
 results.md
