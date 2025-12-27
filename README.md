@@ -24,7 +24,7 @@ ReChorus/                    # ReChorus 框架核心代码
 ├── data/                    # 数据集目录
 │   └── ML-1M/               # MovieLens-1M 数据集
 ├── process_ml1m_final.py    # ML-1M 数据处理脚本（最终版本）
-├── process_split_ml1m.py   # ML-1M 数据切分脚本（带负样本生成）
+├── process_split_ml1m.py    # ML-1M 数据切分脚本（带负样本生成）
 └── requirements.txt         # Python 依赖
 ```
 
@@ -41,7 +41,7 @@ ReChorus/                    # ReChorus 框架核心代码
 1. **克隆或下载项目**
 
 ```bash
-cd TASK/ReChorus
+cd ReChorus
 ```
 
 2. **安装依赖**
@@ -57,7 +57,7 @@ pip install -r requirements.txt
 
 3. **准备数据集**
 
-本项目使用 Grocery_and_Gourmet_Food 数据集（原项目集成）和 MovieLens-1M 数据集。数据预处理有两种方式：
+本项目使用 Grocery_and_Gourmet_Food 数据集（原 [项目](https://github.com/THUwangcy/ReChorus) 集成）和 MovieLens-1M 数据集。数据预处理有两种方式：
 
 **方式一：使用 `process_ml1m_final.py`（简单版本）**
 ```bash
@@ -195,7 +195,7 @@ python src/main.py --model_name GRU4Rec --dataset ML-1M --emb_size 64 --lr 5e-4 
 
 ## 参考文献
 
-- **BSARec 论文**：An Attentive Inductive Bias for Sequential Recommendation beyond the Self-Attention
+- **BSARec 论文**：[An Attentive Inductive Bias for Sequential Recommendation beyond the Self-Attention](https://arxiv.org/abs/2312.10325)
 - **ReChorus 框架**：[THUwangcy/ReChorus](https://github.com/THUwangcy/ReChorus)
 
 ## 作者
@@ -204,4 +204,4 @@ python src/main.py --model_name GRU4Rec --dataset ML-1M --emb_size 64 --lr 5e-4 
 
 ---
 
-**提示**：首次运行建议先在小数据集或少量 epoch 上测试，确认环境配置正确后再进行完整训练。
+首次运行建议先在小数据集或少量 epoch 上测试，确认环境配置正确后再进行完整训练
