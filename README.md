@@ -13,22 +13,19 @@ BSARec (Beyond Self-Attention Recommendation) 是一种序列推荐模型，通�
 ## 项目结构
 
 ```markdown
-TASK/
-├── ReChorus/                    # ReChorus 框架核心代码
-│   ├── src/
-│   │   ├── main.py             # 主入口文件
-│   │   ├── models/
-│   │   │   └── BSARec.py       # BSARec 模型实现（核心代码）
-│   │   ├── helpers/             # Reader 和 Runner 模块
-│   │   └── utils/               # 工具函数
-│   ├── data/                    # 数据集目录
-│   │   └── ML-1M/               # MovieLens-1M 数据集
-│   ├── process_ml1m_final.py    # ML-1M 数据处理脚本（最终版本）
-│   └── process_split_ml1m.py    # ML-1M 数据切分脚本（带负样本生成）
-│   ├── requirements.txt        # Python 依赖
-│   └── README0.md              # ReChorus 原始文档
-├── log/                         # 训练日志（自动生成）
-└── model/                       # 保存的模型文件（自动生成）
+
+ReChorus/                    # ReChorus 框架核心代码
+├── src/
+│   ├── main.py              # 主入口文件
+│   ├── models/
+│   │   └── BSARec.py        # BSARec 模型实现（核心代码）
+│   ├── helpers/             # Reader 和 Runner 模块
+│   └── utils/               # 工具函数
+├── data/                    # 数据集目录
+│   └── ML-1M/               # MovieLens-1M 数据集
+├── process_ml1m_final.py    # ML-1M 数据处理脚本（最终版本）
+├── process_split_ml1m.py   # ML-1M 数据切分脚本（带负样本生成）
+└── requirements.txt         # Python 依赖
 ```
 
 ## 快速开始
